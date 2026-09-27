@@ -1,6 +1,7 @@
 from pathlib import Path
 from html import escape
 from base64 import b64encode
+from hashlib import sha256
 from urllib.parse import quote
 from zipfile import ZipFile, ZIP_DEFLATED
 p=Path(__file__).parent
@@ -81,11 +82,13 @@ sortButtons.forEach(button => {
 });
 '''
 html=html.replace('</body>',f'<script>{sort_script}</script></body>')
+style=(p/'style.css').read_text()
+stylesheet_href=f'style.css?v={sha256(style.encode()).hexdigest()[:12]}'
+html=html.replace('href="style.css"',f'href="{stylesheet_href}"')
 (p/'index.html').write_text(html)
 
 # Keep the single-file page and the download bundle aligned with index.html.
-style=(p/'style.css').read_text()
-self_contained=html.replace('<link rel="stylesheet" href="style.css">',f'<style>{style}</style>')
+self_contained=html.replace(f'<link rel="stylesheet" href="{stylesheet_href}">',f'<style>{style}</style>')
 for i in range(1,len(homes)+1):
  photo=(p/'assets'/f'{i:02}.jpg').read_bytes()
  self_contained=self_contained.replace(f'assets/{i:02}.jpg',f'data:image/jpeg;base64,{b64encode(photo).decode("ascii")}')
